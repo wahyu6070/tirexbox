@@ -1,0 +1,234 @@
+#!/system/bin/sh
+# Android booster (anbo) / TirexBox post-fs
+# Since 18-04-2021 17-15 WIB
+# Latest Update 28-05-2021
+# By wahyu6070
+# Dont change and modification this script !
+sleep 25s
+log=/sdcard/Android/tirexbox/tirexbox_post-fs.log
+
+sedlog(){
+	echo "$1" >> $log
+	}
+sedprop(){
+	echo "$1" > "$2"
+	if [ $2 = $1 ]; then
+		return 0
+	else
+		return 1
+	fi
+	}
+
+selectprop(){
+	local file_location="$2"
+	local number_select="$1"
+	cat ${file_location} | tail -n 1 | tr -s ' ' | cut -d' ' -f${number_select}
+	}
+checkname(){
+	local file_location="$2"
+	local find_name="$1"
+	grep -q ${file_location} ${find_name} && return 0 || return 1
+	}
+getconfig(){
+	local input=$1
+	local base=/data/media/0/Android/tirexbox/tirexbox.prop
+	grep "^$input" "$base" | head -n1 | cut -d = -f 2
+	}
+#
+
+for b in $log; do
+	test ! -d $(dirname $log) && mkdir -p $(dirname $log)
+	test -f $b && rm $b
+done
+#
+
+
+sedlog " Starting : $(date '+%d/%m/%Y %H:%M:%S')" 
+sedlog "|_____________________________"
+sedlog "|"
+sedlog "|  Device info"
+sedlog "|_____________________________"
+sedlog "| Name ROM : $(getprop ro.build.display.id)"
+sedlog "| Android  : $(getprop ro.build.version.release)"
+sedlog "| SDK      : $(getprop ro.build.version.sdk)"
+sedlog "| Device   : $(getprop ro.product.vendor.model) ($(getprop ro.product.vendor.device))"
+sedlog "| SOC      : $(cat /sys/devices/soc0/vendor) $(cat /sys/devices/soc0/family) $(cat /sys/devices/soc0/machine)"
+sedlog "| GPU      : $(cat /sys/kernel/gpu/gpu_model)"
+sedlog "| Kernel   : $(uname -r)"
+sedlog "|_____________________________"
+
+sedlog " _____________________________"
+sedlog "|"
+sedlog "|  Tweaks"
+sedlog "|_____________________________"
+#sleep 60s
+NUM=0
+
+#gpu
+#grep freq
+case $(getconfig gpu.booster) in
+1)
+	NEW=`selectprop 3 /sys/kernel/gpu/gpu_freq_table`
+	OLD=`cat /sys/kernel/gpu/gpu_min_clock`
+	sedprop $NEW /sys/kernel/gpu/gpu_min_clock
+	[ $? ] && STATUS=[OK] || STATUS=[ERROR]
+	NUM=$((NUM+1))
+	sedlog "|${NUM}| Set Gpu freq <$OLD> to <$NEW> $STATUS"
+;;
+2)
+	NEW=`cat /sys/kernel/gpu/gpu_max_clock`
+	OLD=`cat /sys/kernel/gpu/gpu_min_clock`
+	sedprop $NEW /sys/kernel/gpu/gpu_min_clock
+	[ $? ] && STATUS=[OK] || STATUS=[ERROR]
+	NUM=$((NUM+1))
+	sedlog "|${NUM}| Set Gpu freq <$OLD> to <$NEW> $STATUS"
+;;
+esac
+#gpu geventor bencmark
+# test on asus zenfone max pro m1 (X00T) 19-04-2021 03-48 WIB
+# Name           | Skor Antutu | Baterry usage
+# Performance    |  151637     |  3%
+# Userspace      |  151126     |  2%
+# Msm-adreno-tz  |  150491     |  2%
+# simple_ondemand|  150954     |  3%
+#
+# Gpu geventor
+case $(getconfig gpu.booster) in
+1)
+	NEW=userspace
+	OLD=`cat /sys/kernel/gpu/gpu_governor`
+	sedprop $NEW /sys/kernel/gpu/gpu_governor
+	[ $? ] && STATUS=[OK] || STATUS=[ERROR]
+	NUM=$((NUM+1))
+	sedlog "|${NUM}| Set Gpu Geventor <$OLD> to <$NEW> $STATUS"
+;;
+2)
+	NEW=performance
+	OLD=`cat /sys/kernel/gpu/gpu_governor`
+	sedprop $NEW /sys/kernel/gpu/gpu_governor
+	[ $? ] && STATUS=[OK] || STATUS=[ERROR]
+	NUM=$((NUM+1))
+	sedlog "|${NUM}| Set Gpu Geventor <$OLD> to <$NEW> $STATUS"
+;;
+esac
+
+#cpu clusters 1 freq
+case $(getconfig cpu.booster) in
+1)
+	NEW=`selectprop 3 /sys/devices/system/cpu/cpufreq/policy0/scaling_available_frequencies`
+	OLD=`cat /sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq`
+	sedprop $NEW /sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq
+	[ $? ] && STATUS=[OK] || STATUS=[ERROR]
+	NUM=$((NUM+1))
+	sedlog "|${NUM}| Set CPU clusters 1 freq <$OLD> to <$NEW> $STATUS"
+;;
+2)
+	NEW=`cat /sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq`
+	OLD=`cat /sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq`
+	sedprop $NEW /sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq
+	[ $? ] && STATUS=[OK] || STATUS=[ERROR]
+	NUM=$((NUM+1))
+	sedlog "|${NUM}| Set CPU clusters 1 freq <$OLD> to <$NEW> $STATUS"
+;;
+esac
+#cpu clusters 1 Geventor
+case $(getconfig cpu.booster) in
+1)
+	NEW=`selectprop 3 /sys/devices/system/cpu/cpufreq/policy0/scaling_available_frequencies`
+	OLD=`cat /sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq`
+	sedprop $NEW /sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq
+	[ $? ] && STATUS=[OK] || STATUS=[ERROR]
+	NUM=$((NUM+1))
+	sedlog "|${NUM}| Set CPU clusters 1 freq <$OLD> to <$NEW> $STATUS"
+;;
+2)
+	NEW=`cat /sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq`
+	OLD=`cat /sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq`
+	sedprop $NEW /sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq
+	[ $? ] && STATUS=[OK] || STATUS=[ERROR]
+	NUM=$((NUM+1))
+	sedlog "|${NUM}| Set CPU clusters 1 freq <$OLD> to <$NEW> $STATUS"
+;;
+esac
+
+
+
+
+
+#stop apps
+sedlog " _____________________________"
+sedlog "|"
+sedlog "|  List Apps Stopped"
+sedlog "|_____________________________"
+
+if [ $(getconfig force.stop.app.after.booting) = ON ]; then
+NUMAPPS=0
+
+for LIST_APPS in $(pm list packages -3); do
+	APPS=`echo $LIST_APPS | head -n1 | cut -d : -f 2`
+	case $APPS in
+		com.topjohnwu.magisk) continue ;;
+	esac
+	am force-stop $APPS
+	[ $? ] && STATUS=[OK] || STATUS=[ERROR]
+	NUMAPPS=$((NUMAPPS+1))
+	sedlog "|${NUMAPPS}| $APPS $STATUS"
+done
+fi
+#
+# Apps permissions
+#
+sedlog " _____________________________"
+sedlog "|"
+sedlog "|  List Apps Set Permissions"
+sedlog "|_____________________________"
+list_package="
+com.google.android.contacts
+com.google.android.dialer
+com.google.android.inputmethod.latin
+com.google.android.apps.messaging
+com.google.android.soundpicker
+com.actionlauncher.playstore
+ch.deletescape.lawnchair.plah
+amirz.rootless.nexuslauncher
+com.mixplorer
+"
+list_perm="
+android.permission.READ_CALENDAR
+android.permission.READ_CALL_LOG 
+android.permission.ACCESS_FINE_LOCATION
+android.permission.READ_EXTERNAL_STORAGE
+android.permission.ACCESS_COARSE_LOCATION
+android.permission.READ_PHONE_STATE
+android.permission.SEND_SMS
+android.permission.CALL_PHONE
+android.permission.WRITE_CONTACTSandroid.permission.CAMERA
+android.permission.WRITE_CALL_LOG
+android.permission.PROCESS_OUTGOING_CALLS
+android.permission.GET_ACCOUNTS
+android.permission.WRITE_EXTERNAL_STORAGE
+android.permission.RECORD_AUDIO
+android.permission.ACCESS_MEDIA_LOCATION
+android.permission.READ_CONTACTS
+android.permission.CAMERA
+android.permission.BODY_SENSORS
+"
+
+for i in $(pm list package); do
+insetapp=$(echo "$i" | head -n1 | cut -d : -f 2)
+	for setapp in $list_package; do
+		if [[ "$insetapp" == "$setapp" ]]; then
+			for setperm_app in $list_perm; do
+				pm grant $insetapp $setperm_app 2>/dev/null && echo "[OK] Set Permissions $insetapp $setperm_app" >> $log \
+				|| echo "[ERROR] Set Permissions $insetapp $setperm_app" >> $log
+			done
+  		#else
+  		#echo "[X] ${insetapp} -> package not TirexBox Apps" >> $log
+  		fi
+  	done	
+done
+echo " " >> $log
+echo "# $(date '+%d/%m/%Y %H:%M:%S')" >> $log
+echo "###########" >> $log
+echo "#   Done  #" >> $log
+echo "###########" >> $log
